@@ -1,0 +1,13 @@
+{
+  "": {
+    "dependencies": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DiskSpaceSwiftUI.d",
+    "object": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DiskSpaceSwiftUI.o",
+    "swift-dependencies": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/master.swiftdeps"
+  },
+  "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/main.swift": {
+    "object": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/main.swift.o",
+    "swiftmodule": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/main~partial.swiftmodule",
+    "swift-dependencies": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/main.swiftdeps",
+    "diagnostics": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/main.dia"
+  }
+}

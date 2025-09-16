@@ -75,13 +75,36 @@ function run(argv) {
   var result = doCheck();
   var choice = app.displayDialog(result.message, {
     withTitle: 'DiskSpace',
-    buttons: ['Auto Clean', 'Interactive', 'Schedule', 'Unschedule', 'Quit'],
+    buttons: ['Auto Clean', 'More…', 'Quit'],
     defaultButton: 'Auto Clean',
     cancelButton: 'Quit'
   });
   var btn = choice.buttonReturned;
-  if (btn === 'Auto Clean') doAutoClean();
-  else if (btn === 'Interactive') doInteractiveClean();
-  else if (btn === 'Schedule') doSchedule();
-  else if (btn === 'Unschedule') doUnschedule();
+  if (btn === 'Auto Clean') {
+    doAutoClean();
+  } else if (btn === 'More…') {
+    var options = ['Interactive Clean', 'Schedule Daily', 'Unschedule', 'Open Report in Terminal'];
+    var picked = app.chooseFromList(options, {
+      withTitle: 'DiskSpace: Actions',
+      withPrompt: 'Choose an action',
+      multipleSelectionsAllowed: false
+    });
+    if (!picked) return; // user cancelled
+    switch (picked[0]) {
+      case 'Interactive Clean':
+        doInteractiveClean();
+        break;
+      case 'Schedule Daily':
+        doSchedule();
+        break;
+      case 'Unschedule':
+        doUnschedule();
+        break;
+      case 'Open Report in Terminal':
+        var Terminal = Application('Terminal');
+        Terminal.activate();
+        Terminal.doScript(quoted(ds) + ' check');
+        break;
+    }
+  }
 }
