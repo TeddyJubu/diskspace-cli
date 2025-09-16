@@ -13,8 +13,11 @@ fi
 # Create app bundle structure
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
 
-# Info.plist
-cat > "$APP_DIR/Contents/Info.plist" <<PLIST
+# Info.plist (use project plist if present)
+if [ -f "$HOME/DiskSpaceSwiftUI/Info.plist" ]; then
+  cp "$HOME/DiskSpaceSwiftUI/Info.plist" "$APP_DIR/Contents/Info.plist"
+else
+  cat > "$APP_DIR/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -28,6 +31,12 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
 </dict>
 </plist>
 PLIST
+fi
+
+# Icon copy if available
+if [ -f "$HOME/DiskSpaceSwiftUI/AppIcon.icns" ]; then
+  cp "$HOME/DiskSpaceSwiftUI/AppIcon.icns" "$APP_DIR/Contents/Resources/AppIcon.icns"
+fi
 
 # Copy binary
 cp "$BIN" "$APP_DIR/Contents/MacOS/$APP_NAME"
