@@ -1,0 +1,37 @@
+#!/bin/zsh
+# ds - convenience wrapper for diskspace with slash shortcuts
+# Usage examples:
+#   ds check
+#   ds /clean        # same as: ds clean
+#   ds /watch        # same as: ds watch
+#   ds /schedule     # same as: ds schedule
+#   ds /             # lists commands
+
+DISKSPACE_BIN=${DISKSPACE_BIN:-$HOME/diskspace}
+
+list_cmds() {
+  echo "Available commands:"
+  echo "  /check        – check disk usage"
+  echo "  /clean        – interactive cleanup"
+  echo "  /auto-clean   – safe automatic cleanup"
+  echo "  /watch        – live monitor"
+  echo "  /schedule     – schedule daily check"
+  echo "  /unschedule   – remove schedule"
+  echo "  /config       – configure threshold"
+  echo "  /help         – help"
+}
+
+# If first arg starts with '/', map it to diskspace command
+if [[ "$1" == /* ]]; then
+  subcmd=${1#/}
+  [[ -z "$subcmd" ]] && { list_cmds; exit 0 }
+  exec "$DISKSPACE_BIN" "$subcmd" ${@:2}
+fi
+
+# If no args, show a quick menu
+if [[ $# -eq 0 ]]; then
+  list_cmds
+  exit 0
+fi
+
+exec "$DISKSPACE_BIN" "$@"

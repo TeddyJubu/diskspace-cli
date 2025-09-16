@@ -1,0 +1,565 @@
+#!/bin/bash
+
+# DiskSpace - All-in-one disk space monitor and cleaner for macOS
+# Single file solution with CLI and optional GUI notifications
+# Version: 2.0
+
+# Configuration
+THRESHOLD_PERCENT=${DISK_THRESHOLD:-80}
+CONFIG_FILE="$HOME/.diskspace_config"
+LOG_FILE="$HOME/.diskspace_log"
+VERSION="2.0"
+
+# Colors for terminal output (use real ESC sequences)
+ESC=$(printf '\033')
+RED="${ESC}[0;31m"
+YELLOW="${ESC}[1;33m"
+GREEN="${ESC}[0;32m"
+BLUE="${ESC}[0;34m"
+CYAN="${ESC}[0;36m"
+BOLD="${ESC}[1m"
+DIM="${ESC}[2m"
+NC="${ESC}[0m" # No Color
+
+# Function to show usage
+show_usage() {
+    cat << EOF
+${BOLD}DiskSpace${NC} - Intelligent disk space monitor and cleaner for macOS
+Version $VERSION
+
+${BOLD}USAGE:${NC}
+    $(basename "$0") [COMMAND] [OPTIONS]
+
+${BOLD}COMMANDS:${NC}
+    ${CYAN}check${NC}           Check disk usage and show suggestions
+    ${CYAN}clean${NC}           Interactive cleanup mode
+    ${CYAN}auto-clean${NC}      Automatic cleanup (safe operations only)
+    ${CYAN}watch${NC}           Monitor disk usage continuously
+    ${CYAN}schedule${NC}        Set up automatic monitoring
+    ${CYAN}unschedule${NC}      Remove automatic monitoring
+    ${CYAN}config${NC}          Configure settings
+    ${CYAN}help${NC}            Show this help message
+
+${BOLD}OPTIONS:${NC}
+    -q, --quiet     Minimal output
+    -v, --verbose   Detailed output
+    -n, --notify    Show macOS notification
+    -j, --json      Output in JSON format
+
+${BOLD}EXAMPLES:${NC}
+    $(basename "$0") check              # Check disk usage
+    $(basename "$0") check --notify     # Check and show notification
+    $(basename "$0") clean              # Interactive cleanup
+    $(basename "$0") auto-clean         # Automatic safe cleanup
+    $(basename "$0") watch              # Live monitoring
+    $(basename "$0") schedule daily     # Schedule daily checks
+
+EOF
+}
+
+# Function to get disk usage percentage
+get_disk_usage() {
+    df -h "/System/Volumes/Data" 2>/dev/null | awk 'NR==2 {gsub(/%/,""); print $5}'
+}
+
+# Function to get free space in GB
+get_free_space() {
+    df -h "/System/Volumes/Data" 2>/dev/null | awk 'NR==2 {print $4}'
+}
+
+# Function to convert KB to human readable
+human_readable() {
+    local size=$1
+    if [ -z "$size" ] || [ "$size" = "0" ]; then
+        echo "0 KB"
+    elif [ $size -ge 1048576 ]; then
+        echo "$(echo "scale=1; $size/1048576" | bc 2>/dev/null || echo "$((size/1048576))") GB"
+    elif [ $size -ge 1024 ]; then
+        echo "$(echo "scale=1; $size/1024" | bc 2>/dev/null || echo "$((size/1024))") MB"
+    else
+        echo "$size KB"
+    fi
+}
+
+# JSON string escaper
+json_escape() {
+    # Escape backslashes and double quotes for JSON strings
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    printf "%s" "$s"
+}
+
+# Choose a color for a usage percentage
+usage_color() {
+    local p=$1
+    if [ "$p" -lt 60 ]; then
+        printf "%s" "$GREEN"
+    elif [ "$p" -lt "$THRESHOLD_PERCENT" ]; then
+        printf "%s" "$YELLOW"
+    else
+        printf "%s" "$RED"
+    fi
+}
+
+# Function to show progress bar (colored)
+show_progress() {
+    local percent=$1
+    local width=50
+    local filled=$((percent * width / 100))
+    local empty=$((width - filled))
+    local color="$(usage_color "$percent")"
+
+    printf "["
+    printf "%s" "$color"
+    printf "%${filled}s" | tr ' ' '█'
+    printf "%s" "$NC"
+    printf "%${empty}s" | tr ' ' '░'
+    printf "] %d%%\n" "$percent"
+}
+
+# Icon for problem id
+icon_for_id() {
+    case "$1" in
+        warp) echo "🌀" ;;
+        docker) echo "🐳" ;;
+        vscode) echo "🧩" ;;
+        devcache_*) echo "🧰" ;;
+        arc) echo "🌐" ;;
+        npm) echo "📦" ;;
+        downloads) echo "⬇️" ;;
+        trash) echo "🗑️" ;;
+        *) echo "•" ;;
+    esac
+}
+
+# Colorize size depending on magnitude
+color_size() {
+    local kb=${1:-0}
+    if [ "$kb" -ge 5242880 ]; then # >= 5 GiB
+        printf "%s%s%s" "$RED" "$(human_readable "$kb")" "$NC"
+    elif [ "$kb" -ge 1048576 ]; then # >= 1 GiB
+        printf "%s%s%s" "$YELLOW" "$(human_readable "$kb")" "$NC"
+    else
+        printf "%s%s%s" "$GREEN" "$(human_readable "$kb")" "$NC"
+    fi
+}
+
+# Function to check known problem areas
+check_problems() {
+    local json_mode=${1:-false}
+    local problems=()
+    local total_reclaimable=0
+    
+    # Check Warp logs
+    if [ -d "$HOME/Library/Application Support/dev.warp.Warp-Stable/mcp" ]; then
+        local warp_size=$(find "$HOME/Library/Application Support/dev.warp.Warp-Stable/mcp" -name "*.log" -type f -exec du -sk {} + 2>/dev/null | awk '{sum+=$1} END {print (NR>0?sum:0)}')
+        warp_size=${warp_size:-0}
+        if [ "$warp_size" -gt 1048576 ]; then
+            problems+=("warp:$warp_size:Warp logs:find ~/Library/Application\\ Support/dev.warp.Warp-Stable/mcp -name '*.log' -size +100M -exec truncate -s 0 {} \\;")
+            total_reclaimable=$((total_reclaimable + warp_size))
+        fi
+    fi
+    
+    # Check Docker
+    if command -v docker &> /dev/null && docker info &> /dev/null 2>&1; then
+        local docker_size=$(docker system df 2>/dev/null | awk '/RECLAIMABLE/{getline; gsub(/GB/,"*1048576"); gsub(/MB/,"*1024"); gsub(/kB/,""); gsub(/[^0-9.*]/,""); print $4}' | bc 2>/dev/null | cut -d. -f1)
+        docker_size=${docker_size:-0}
+        if [ -n "$docker_size" ] && [ "$docker_size" -gt 1048576 ]; then
+            problems+=("docker:$docker_size:Docker unused data:docker system prune -af")
+            total_reclaimable=$((total_reclaimable + docker_size))
+        fi
+    fi
+    
+    # Check VS Code caches
+    if [ -d "$HOME/Library/Application Support/Code" ]; then
+        local vscode_size=$(du -sk "$HOME/Library/Application Support/Code/CachedExtensionVSIXs" \
+                                  "$HOME/Library/Application Support/Code/User/globalStorage" \
+                                  "$HOME/Library/Application Support/Code/WebStorage" 2>/dev/null | awk '{sum+=$1} END {print (NR>0?sum:0)}')
+        vscode_size=${vscode_size:-0}
+        if [ "$vscode_size" -gt 524288 ]; then
+            problems+=("vscode:$vscode_size:VS Code caches:rm -rf ~/Library/Application\\ Support/Code/{CachedExtensionVSIXs,WebStorage,GPUCache}")
+            total_reclaimable=$((total_reclaimable + vscode_size))
+        fi
+    fi
+    
+    # Check developer caches
+    local cache_dirs=("$HOME/.cache/uv" "$HOME/.cache/puppeteer" "$HOME/.cache/prisma" "$HOME/.gradle" "$HOME/.yarn/cache")
+    for dir in "${cache_dirs[@]}"; do
+        if [ -d "$dir" ]; then
+            local dir_size=$(du -sk "$dir" 2>/dev/null | awk 'NF{print $1} END{if(NR==0) print 0}')
+            dir_size=${dir_size:-0}
+            if [ "$dir_size" -gt 524288 ]; then
+                local name=$(basename "$dir")
+                problems+=("devcache_$name:$dir_size:Dev cache - $name:rm -rf $dir")
+                total_reclaimable=$((total_reclaimable + dir_size))
+            fi
+        fi
+    done
+    
+    # Check Arc browser cache
+    if [ -d "$HOME/Library/Application Support/Arc/User Data" ]; then
+        local arc_size=$(find "$HOME/Library/Application Support/Arc/User Data" -maxdepth 2 -type d \( -name "Cache" -o -name "Code Cache" -o -name "GPUCache" \) -exec du -sk {} + 2>/dev/null | awk '{sum+=$1} END {print (NR>0?sum:0)}')
+        arc_size=${arc_size:-0}
+        if [ "$arc_size" -gt 524288 ]; then
+            problems+=("arc:$arc_size:Arc browser cache:find ~/Library/Application\\ Support/Arc/User\\ Data -maxdepth 2 -type d \\( -name Cache -o -name 'Code Cache' -o -name GPUCache \\) -exec rm -rf {} +")
+            total_reclaimable=$((total_reclaimable + arc_size))
+        fi
+    fi
+    
+    # Check npm cache
+    if command -v npm &> /dev/null; then
+        local npm_size=$(npm cache verify 2>&1 | grep -oE '[0-9]+(\.[0-9]+)?[MG]B' | head -1 | sed 's/GB/*1024/;s/MB//;s/B//' | bc 2>/dev/null | cut -d. -f1)
+        npm_size=${npm_size:-0}
+        if [ -n "$npm_size" ] && [ "$npm_size" -gt 512 ]; then
+            problems+=("npm:$((npm_size * 1024)):npm cache:npm cache clean --force")
+            total_reclaimable=$((total_reclaimable + npm_size * 1024))
+        fi
+    fi
+    
+    # Check Downloads folder for old files
+    if [ -d "$HOME/Downloads" ]; then
+        local old_downloads=$(find "$HOME/Downloads" -type f -mtime +30 -exec du -sk {} + 2>/dev/null | awk '{sum+=$1} END {print (NR>0?sum:0)}')
+        old_downloads=${old_downloads:-0}
+        if [ "$old_downloads" -gt 1048576 ]; then
+            problems+=("downloads:$old_downloads:Old Downloads (30+ days):find ~/Downloads -type f -mtime +30 -delete")
+            total_reclaimable=$((total_reclaimable + old_downloads))
+        fi
+    fi
+    
+    # Check Trash
+    local trash_size=$(du -sk "$HOME/.Trash" 2>/dev/null | awk 'NF{print $1} END{if(NR==0) print 0}')
+    trash_size=${trash_size:-0}
+    if [ "$trash_size" -gt 1048576 ]; then
+        problems+=("trash:$trash_size:Trash:rm -rf ~/.Trash/*")
+        total_reclaimable=$((total_reclaimable + trash_size))
+    fi
+    
+    # Output results
+    if [ "$json_mode" = "true" ]; then
+        echo "{"
+        echo "  \"total_reclaimable\": $total_reclaimable,"
+        echo "  \"problems\": ["
+        local first=true
+        for problem in "${problems[@]}"; do
+            IFS=':' read -r id size desc cmd <<< "$problem"
+            desc_esc=$(json_escape "$desc")
+            cmd_esc=$(json_escape "$cmd")
+            [ "$first" = true ] && first=false || echo ","
+            printf '    {"id": "%s", "size": %s, "description": "%s", "command": "%s"}' "$id" "$size" "$desc_esc" "$cmd_esc"
+        done
+        echo ""
+        echo "  ]"
+        echo "}"
+    else
+        for problem in "${problems[@]}"; do
+            IFS=':' read -r id size desc cmd <<< "$problem"
+            echo "$id:$size:$desc:$cmd"
+        done
+        echo "TOTAL:$total_reclaimable"
+    fi
+}
+
+# Function to perform check
+do_check() {
+    local quiet=${1:-false}
+    local notify=${2:-false}
+    local json=${3:-false}
+    
+    local usage=$(get_disk_usage)
+    local free=$(get_free_space)
+    usage=${usage:-0}
+    
+    if [ "$json" = "true" ]; then
+        local problems=$(check_problems true)
+        # Pretty-print JSON
+        printf '{\n'
+        printf '  "disk_usage_percent": %s,\n' "$usage"
+        printf '  "free_space": "%s",\n' "$free"
+        printf '  "threshold": %s,\n' "$THRESHOLD_PERCENT"
+        printf '  "status": "%s",\n' "$([ $usage -gt $THRESHOLD_PERCENT ] && echo warning || echo ok)"
+        printf '  "cleanup_opportunities": %s\n' "$problems"
+        printf '}\n'
+        return
+    fi
+    
+    if [ "$quiet" != "true" ]; then
+        echo ""
+        echo "${BOLD}=== DiskSpace Check ===${NC}"
+        echo ""
+        echo "Disk Usage: "
+        show_progress "$usage"
+        echo "Free Space: ${BOLD}$free${NC}"
+        echo ""
+    fi
+    
+    if [ "$usage" -gt "$THRESHOLD_PERCENT" ]; then
+        printf "%b\n" "${YELLOW}⚠️  Warning: Disk usage exceeds ${THRESHOLD_PERCENT}%${NC}"
+    else
+        printf "%b\n" "${GREEN}✓ Disk usage is within acceptable limits${NC}"
+    fi
+    
+    # Check for problems
+    local problems=$(check_problems false)
+    local total_reclaimable=$(echo "$problems" | grep "^TOTAL:" | cut -d: -f2)
+    total_reclaimable=${total_reclaimable:-0}
+    
+    if [ "$total_reclaimable" -gt 0 ]; then
+        echo ""
+        echo "${BOLD}Cleanup Opportunities:${NC}"
+        # Pretty list with icons and colored sizes
+        echo "$problems" | grep -v "^TOTAL:" | while IFS=':' read -r id size desc cmd; do
+            [ -z "$id" ] && continue
+            icon=$(icon_for_id "$id")
+            sz=$(color_size "$size")
+            printf "  %s %s%s%s  %s\n" "$icon" "$BOLD" "$desc" "$NC" "$sz"
+        done
+        echo ""
+        echo "${BOLD}Total Reclaimable:${NC} $(color_size "$total_reclaimable")"
+    fi
+    
+    # Show notification if requested
+    if [ "$notify" = "true" ] && [ "$usage" -gt "$THRESHOLD_PERCENT" ]; then
+        osascript -e "display notification \"Disk usage: ${usage}%\nReclaimable: $(human_readable $total_reclaimable)\" with title \"⚠️ DiskSpace Alert\" subtitle \"Storage exceeds ${THRESHOLD_PERCENT}%\""
+    fi
+}
+
+# Function for interactive cleanup
+do_clean() {
+    echo ""
+    echo "${BOLD}=== DiskSpace Interactive Cleanup ===${NC}"
+    echo ""
+    
+    local problems=$(check_problems false)
+    local total_reclaimable=$(echo "$problems" | grep "^TOTAL:" | cut -d: -f2)
+    
+    if [ -z "$total_reclaimable" ] || [ "$total_reclaimable" -eq 0 ]; then
+        echo "${GREEN}✓ No significant cleanup opportunities found${NC}"
+        return
+    fi
+    
+    echo "Found ${CYAN}$(human_readable $total_reclaimable)${NC} of reclaimable space"
+    echo ""
+    
+    local cleaned=0
+    echo "$problems" | grep -v "^TOTAL:" | while IFS=':' read -r id size desc cmd; do
+        [ -z "$id" ] && continue
+        
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "${BOLD}$desc${NC}"
+        echo "Size: ${YELLOW}$(human_readable $size)${NC}"
+        echo "Command: ${CYAN}$cmd${NC}"
+        echo ""
+        read -p "Clean this? [y/N/q]: " -n 1 -r
+        echo ""
+        
+        if [[ $REPLY =~ ^[Qq]$ ]]; then
+            echo "Cleanup cancelled"
+            break
+        elif [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo "Cleaning..."
+            eval "$cmd" 2>/dev/null && echo "${GREEN}✓ Cleaned${NC}" || echo "${RED}✗ Failed${NC}"
+            cleaned=$((cleaned + size))
+        else
+            echo "Skipped"
+        fi
+        echo ""
+    done
+    
+    echo ""
+    echo "${BOLD}Cleanup Summary:${NC}"
+    echo "Space reclaimed: ${GREEN}$(human_readable $cleaned)${NC}"
+}
+
+# Function for automatic cleanup (safe operations only)
+do_auto_clean() {
+    echo ""
+    echo "${BOLD}=== DiskSpace Auto-Clean (Safe Mode) ===${NC}"
+    echo ""
+    
+    local safe_commands=(
+        "npm cache clean --force"
+        "yarn cache clean"
+        "pnpm store prune"
+        "find ~/Library/Application\ Support/dev.warp.Warp-Stable/mcp -name '*.log' -size +100M -exec truncate -s 0 {} \\;"
+    )
+    
+    local cleaned=0
+    for cmd in "${safe_commands[@]}"; do
+        echo "Running: $cmd"
+        eval "$cmd" 2>/dev/null && echo "${GREEN}✓${NC}" || echo "${YELLOW}⊗${NC}"
+    done
+    
+    echo ""
+    echo "${GREEN}✓ Auto-clean complete${NC}"
+}
+
+# Function for continuous monitoring
+do_watch() {
+    echo "${BOLD}=== DiskSpace Monitor ===${NC}"
+    echo "Press Ctrl+C to stop"
+    echo ""
+    
+    while true; do
+        clear
+        echo "${BOLD}=== DiskSpace Monitor ===${NC}"
+        echo "$(date '+%Y-%m-%d %H:%M:%S')"
+        echo ""
+        
+        local usage=$(get_disk_usage)
+        local free=$(get_free_space)
+        
+        echo "Disk Usage: "
+        show_progress "$usage"
+        echo "Free Space: ${BOLD}$free${NC}"
+        
+        if [ "$usage" -gt "$THRESHOLD_PERCENT" ]; then
+            echo ""
+            echo -e "${YELLOW}⚠️  Warning: Disk usage exceeds ${THRESHOLD_PERCENT}%${NC}"
+        fi
+        
+        sleep 5
+    done
+}
+
+# Function to schedule monitoring
+do_schedule() {
+    local frequency=${1:-daily}
+    local plist_path="$HOME/Library/LaunchAgents/com.diskspace.plist"
+    
+    # Resolve absolute script path so scheduling remains valid if moved
+    local script_path="$0"
+    case "$script_path" in
+        /*) ;;  # absolute already
+        *) script_path="$(cd "$(dirname "$script_path")" && pwd)/$(basename "$script_path")" ;;
+    esac
+    
+    # Create LaunchAgents directory if needed
+    mkdir -p "$HOME/Library/LaunchAgents"
+    
+    # Unload existing if present
+    [ -f "$plist_path" ] && launchctl unload "$plist_path" 2>/dev/null
+    
+    # Create plist
+    cat > "$plist_path" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.diskspace</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>$script_path</string>
+        <string>check</string>
+        <string>--notify</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>10</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>
+EOF
+    
+    # Load the agent
+    launchctl load "$plist_path"
+    
+    echo "${GREEN}✓ Scheduled daily disk monitoring at 10:00 AM${NC}"
+    echo "To unschedule, run: $(basename "$0") unschedule"
+}
+
+# Function to unschedule monitoring
+do_unschedule() {
+    local plist_path="$HOME/Library/LaunchAgents/com.diskspace.plist"
+    
+    if [ -f "$plist_path" ]; then
+        launchctl unload "$plist_path" 2>/dev/null
+        rm "$plist_path"
+        echo "${GREEN}✓ Monitoring unscheduled${NC}"
+    else
+        echo "${YELLOW}No scheduled monitoring found${NC}"
+    fi
+}
+
+# Function to configure settings
+do_config() {
+    echo "${BOLD}=== DiskSpace Configuration ===${NC}"
+    echo ""
+    echo "Current settings:"
+    echo "  Threshold: ${CYAN}${THRESHOLD_PERCENT}%${NC}"
+    echo ""
+    read -p "New threshold percentage (or press Enter to keep $THRESHOLD_PERCENT): " new_threshold
+    
+    if [ -n "$new_threshold" ]; then
+        echo "DISK_THRESHOLD=$new_threshold" > "$CONFIG_FILE"
+        echo "${GREEN}✓ Threshold updated to ${new_threshold}%${NC}"
+    fi
+}
+
+# Main execution
+main() {
+    # Load config if exists
+    [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
+    
+    # Parse command
+    local command=${1:-help}
+    shift
+    
+    # Parse options
+    local quiet=false
+    local verbose=false
+    local notify=false
+    local json=false
+    
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -q|--quiet) quiet=true; shift ;;
+            -v|--verbose) verbose=true; shift ;;
+            -n|--notify) notify=true; shift ;;
+            -j|--json) json=true; quiet=true; shift ;;
+            *) shift ;;
+        esac
+    done
+    
+    # Execute command
+    case $command in
+        check)
+            do_check "$quiet" "$notify" "$json"
+            ;;
+        clean)
+            do_clean
+            ;;
+        auto-clean)
+            do_auto_clean
+            ;;
+        watch)
+            do_watch
+            ;;
+        schedule)
+            do_schedule "$1"
+            ;;
+        unschedule)
+            do_unschedule
+            ;;
+        config)
+            do_config
+            ;;
+        help|--help|-h)
+            show_usage
+            ;;
+        *)
+            echo "Unknown command: $command"
+            echo "Run '$(basename "$0") help' for usage information"
+            exit 1
+            ;;
+    esac
+}
+
+# Run main function
+main "$@"
