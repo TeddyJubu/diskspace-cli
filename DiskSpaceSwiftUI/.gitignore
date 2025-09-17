@@ -27,6 +27,13 @@ DerivedData/
 # Test results
 TEST_RESULTS.md
 
+# Icon generation temporary files
+AppIcon.iconset/
+
+# Keep the generated ICNS but exclude large source assets
+AppIcons/
+!AppIcon.icns
+
 # Temporary files
 *.tmp
 *~
