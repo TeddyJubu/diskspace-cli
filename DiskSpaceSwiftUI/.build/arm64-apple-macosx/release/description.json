@@ -1,6 +1,10 @@
 {
   "builtTestProducts" : [
-
+    {
+      "binaryPath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.xctest/Contents/MacOS/DiskSpaceSwiftUIPackageTests",
+      "packagePath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI",
+      "productName" : "DiskSpaceSwiftUIPackageTests"
+    }
   ],
   "copyCommands" : {
 
@@ -162,6 +166,207 @@
       ],
       "tempsPath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build",
       "wholeModuleOptimization" : true
+    },
+    "C.DiskSpaceSwiftUIPackageTests-arm64-apple-macosx26.0-release.module" : {
+      "executable" : "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.build/sources",
+      "importPath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.derived/runner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/swift-version-39B54973F684ADAB.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/Modules/DiskSpaceSwiftUITests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "DiskSpaceSwiftUIPackageTests",
+      "moduleOutputPath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/Modules/DiskSpaceSwiftUIPackageTests.swiftmodule",
+      "objects" : [
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.build/runner.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "8",
+        "-serialize-diagnostics",
+        "-O",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.build/include/DiskSpaceSwiftUIPackageTests-Swift.h",
+        "-color-diagnostics",
+        "-plugin-path",
+        "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+        "-F",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "diskspaceswiftui"
+      ],
+      "outputFileMapPath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/Modules/DiskSpaceSwiftUIPackageTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.derived/runner.swift"
+      ],
+      "tempsPath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.build",
+      "wholeModuleOptimization" : true
+    },
+    "C.DiskSpaceSwiftUITests-arm64-apple-macosx26.0-release.module" : {
+      "executable" : "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUITests.build/sources",
+      "importPath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Tests/DiskSpaceSwiftUITests/ScannerTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/swift-version-39B54973F684ADAB.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUITests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "DiskSpaceSwiftUITests",
+      "moduleOutputPath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/Modules/DiskSpaceSwiftUITests.swiftmodule",
+      "objects" : [
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUITests.build/ScannerTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "8",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/index/store",
+        "-O",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-color-diagnostics",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+        "-F",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "diskspaceswiftui"
+      ],
+      "outputFileMapPath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUITests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUITests.build/ScannerTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/Modules/DiskSpaceSwiftUITests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/Tests/DiskSpaceSwiftUITests/ScannerTests.swift"
+      ],
+      "tempsPath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUITests.build",
+      "wholeModuleOptimization" : true
     }
   },
   "swiftFrontendCommands" : {
@@ -237,18 +442,166 @@
       "diskspaceswiftui",
       "-driver-use-frontend-path",
       "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "DiskSpaceSwiftUIPackageTests" : [
+      "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "DiskSpaceSwiftUIPackageTests",
+      "-package-name",
+      "diskspaceswiftui",
+      "-c",
+      "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.derived/runner.swift",
+      "-I",
+      "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "8",
+      "-serialize-diagnostics",
+      "-O",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.build/include/DiskSpaceSwiftUIPackageTests-Swift.h",
+      "-color-diagnostics",
+      "-plugin-path",
+      "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+      "-F",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "diskspaceswiftui",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "DiskSpaceSwiftUITests" : [
+      "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "DiskSpaceSwiftUITests",
+      "-package-name",
+      "diskspaceswiftui",
+      "-c",
+      "/Users/teddyburtonburger/DiskSpaceSwiftUI/Tests/DiskSpaceSwiftUITests/ScannerTests.swift",
+      "-I",
+      "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "8",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/index/store",
+      "-O",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-color-diagnostics",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+      "-F",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "diskspaceswiftui",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
     ]
   },
   "targetDependencyMap" : {
     "DiskSpaceSwiftUI" : [
 
+    ],
+    "DiskSpaceSwiftUIPackageTests" : [
+      "DiskSpaceSwiftUITests",
+      "DiskSpaceSwiftUI"
+    ],
+    "DiskSpaceSwiftUITests" : [
+      "DiskSpaceSwiftUI"
     ]
   },
   "testDiscoveryCommands" : {
 
   },
   "testEntryPointCommands" : {
+    "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.derived/runner.swift" : {
+      "inputs" : [
 
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.derived/runner.swift"
+        }
+      ]
+    }
   },
   "traitConfiguration" : {
     "default" : {
@@ -323,6 +676,76 @@
         }
       ],
       "outputFilePath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.product/Objects.LinkFileList"
+    },
+    "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.derived/runner.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.build/sources"
+    },
+    "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardComponents.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardViewModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DateFormatter+HM.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/Scanner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/main.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUITests.build/ScannerTests.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUIPackageTests.product/Objects.LinkFileList"
+    },
+    "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUITests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Tests/DiskSpaceSwiftUITests/ScannerTests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUITests.build/sources"
     },
     "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/swift-version-39B54973F684ADAB.txt" : {
       "alwaysOutOfDate" : true,
