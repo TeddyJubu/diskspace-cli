@@ -74,56 +74,135 @@ struct DashboardView: View {
                                 .clipped()
                             }
                         }
-                        .frame(minHeight: 200)
+                        .frame(height: 200) // Fixed height instead of minimum
 
                         // Top Large Files with selection
                         WidgetCard("Top Large Files", icon: "doc.text.fill", iconColor: .red) {
-                            VStack(spacing: 8) {
+                            VStack(spacing: 0) {
+                                // Fixed height button bar
                                 HStack {
-                                    Button("Reveal Selected") { for f in selection { vm.reveal(f) } }.disabled(selection.isEmpty)
-                                    Button("Trash Selected", role: .destructive) { batchTrash = Array(selection); showConfirmBatch = true }.disabled(selection.isEmpty)
+                                    Button("Reveal Selected") { 
+                                        for f in selection { vm.reveal(f) } 
+                                    }
+                                    .disabled(selection.isEmpty)
+                                    .buttonStyle(.bordered)
+                                    
+                                    Button("Trash Selected", role: .destructive) { 
+                                        batchTrash = Array(selection)
+                                        showConfirmBatch = true 
+                                    }
+                                    .disabled(selection.isEmpty)
+                                    .buttonStyle(.bordered)
+                                    
                                     Spacer()
+                                    
+                                    Text("\(selection.count) selected")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .opacity(selection.isEmpty ? 0 : 1)
+                                        .animation(.easeInOut(duration: 0.2), value: selection.count)
                                 }
-                                ScrollView {
-                                    VStack(spacing: 0) {
-                                        if vm.topFiles.isEmpty {
-                                            Text("No large files found yet. Run a scan to analyze your disk.")
+                                .frame(height: 32)
+                                .padding(.bottom, 8)
+                                
+                                // Fixed height file list container - absolutely locked height
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.white.opacity(0.03))
+                                        .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                                    
+                                    if vm.topFiles.isEmpty {
+                                        VStack(spacing: 12) {
+                                            Image(systemName: "doc.text")
+                                                .font(.system(size: 32))
                                                 .foregroundStyle(.secondary)
-                                                .font(.callout)
-                                                .multilineTextAlignment(.center)
-                                                .padding(.vertical, 40)
-                                        } else {
-                                            ForEach(Array(vm.topFiles.enumerated()), id: \.offset) { pair in
-                                                let idx = pair.offset
-                                                let f = pair.element
-                                                HStack {
-                                                    Toggle("", isOn: Binding(get: { selection.contains { $0.id == f.id } }, set: { on in if on { selection.insert(f) } else { selection.remove(f) } }))
+                                            Text("No large files found yet")
+                                                .font(.subheadline)
+                                                .foregroundStyle(.secondary)
+                                            Text("Run a scan to analyze your disk")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    } else {
+                                        ScrollView(.vertical, showsIndicators: false) {
+                                            LazyVStack(spacing: 0) {
+                                                ForEach(Array(vm.topFiles.enumerated()), id: \.offset) { pair in
+                                                    let idx = pair.offset
+                                                    let f = pair.element
+                                                    
+                                                    HStack(spacing: 12) {
+                                                        Toggle("", isOn: Binding(
+                                                            get: { selection.contains { $0.id == f.id } },
+                                                            set: { on in 
+                                                                if on { 
+                                                                    selection.insert(f) 
+                                                                } else { 
+                                                                    selection.remove(f) 
+                                                                } 
+                                                            }
+                                                        ))
                                                         .labelsHidden()
                                                         .toggleStyle(.checkbox)
-                                                    VStack(alignment: .leading, spacing: 2) {
-                                                        Text(f.name).font(.subheadline.weight(.medium))
-                                                        Text(f.path).font(.caption).foregroundStyle(.secondary)
+                                                        .frame(width: 20)
+                                                        
+                                                        VStack(alignment: .leading, spacing: 3) {
+                                                            Text(f.name)
+                                                                .font(.subheadline.weight(.medium))
+                                                                .lineLimit(1)
+                                                                .truncationMode(.middle)
+                                                            Text(f.path)
+                                                                .font(.caption)
+                                                                .foregroundStyle(.secondary)
+                                                                .lineLimit(1)
+                                                                .truncationMode(.head)
+                                                        }
+                                                        
+                                                        Spacer()
+                                                        
+                                                        Text(f.sizeText)
+                                                            .font(.subheadline.weight(.medium))
+                                                            .foregroundStyle(.orange)
+                                                            .frame(minWidth: 60, alignment: .trailing)
+                                                        
+                                                        Menu {
+                                                            Button("Reveal in Finder") { vm.reveal(f) }
+                                                            Button("Reveal in Terminal") { vm.revealInTerminal(f) }
+                                                            Button("Copy Path") { vm.copyPath(f) }
+                                                            Divider()
+                                                            Button(role: .destructive) { 
+                                                                pendingTrash = f
+                                                                showConfirmTrash = true 
+                                                            } label: { 
+                                                                Text("Move to Trash…") 
+                                                            }
+                                                        } label: { 
+                                                            Image(systemName: "ellipsis.circle")
+                                                                .imageScale(.medium)
+                                                                .foregroundStyle(.secondary)
+                                                        }
+                                                        .menuStyle(.borderlessButton)
+                                                        .frame(width: 24)
                                                     }
-                                                    Spacer()
-                                                    Text(f.sizeText).font(.subheadline.weight(.medium))
-                                                    Menu {
-                                                        Button("Reveal in Finder") { vm.reveal(f) }
-                                                        Button("Reveal in Terminal") { vm.revealInTerminal(f) }
-                                                        Button("Copy Path") { vm.copyPath(f) }
-                                                        Button(role: .destructive) { pendingTrash = f; showConfirmTrash = true } label: { Text("Move to Trash…") }
-                                                    } label: { Image(systemName: "ellipsis.circle").imageScale(.medium) }
-                                                    .menuStyle(.borderlessButton)
+                                                    .padding(.horizontal, 16)
+                                                    .padding(.vertical, 12)
+                                                    .background(selection.contains { $0.id == f.id } ? Color.blue.opacity(0.1) : Color.clear)
+                                                    .overlay(alignment: .bottom) {
+                                                        if idx < vm.topFiles.count - 1 {
+                                                            Divider()
+                                                                .padding(.horizontal, 16)
+                                                        }
+                                                    }
                                                 }
-                                                .padding(.vertical, 10)
-                                                .overlay(alignment: .bottom) { if idx != vm.topFiles.indices.last { Divider() } }
                                             }
+                                            .padding(.vertical, 8)
                                         }
                                     }
                                 }
-                                .frame(height: 220) // Fixed height to prevent resizing
+                                .frame(width: .infinity, height: 220) // Absolutely fixed height
+                                .clipped() // Prevent any overflow
                             }
                         }
-                        .frame(minHeight: 320)
+                        .frame(height: 320) // Fixed card height instead of minHeight
 
                         // Cleanup Opportunities
                         WidgetCard("Cleanup Opportunities", icon: "sparkles", iconColor: .yellow) {
@@ -180,7 +259,7 @@ struct DashboardView: View {
                                 }
                             }
                         }
-                        .frame(minHeight: 280)
+                        .frame(height: 280) // Fixed height instead of minimum
 
                     }
 
@@ -247,7 +326,7 @@ struct DashboardView: View {
                                 .frame(height: 100)
                             }
                         }
-                        .frame(minHeight: 320)
+                        .frame(height: 320) // Fixed height instead of minimum
 
                         // Historical Trends (from persisted history)
                         WidgetCard("Historical Usage Trends", icon: "chart.line.uptrend.xyaxis", iconColor: .cyan) {
@@ -287,7 +366,7 @@ struct DashboardView: View {
                                 }
                             }
                         }
-                        .frame(minHeight: 250)
+                        .frame(height: 250) // Fixed height instead of minimum
 
                         // Scheduled Cleanup (summary controlled via existing model)
                         WidgetCard("Scheduled Cleanup", icon: "calendar", iconColor: .indigo) {
