@@ -11,6 +11,7 @@ struct DashboardView: View {
     @State private var selection: Set<DSFileItem> = []
     @State private var batchTrash: [DSFileItem] = []
     @State private var showConfirmBatch = false
+    @State private var showSettings = false
 
     private let columns = [GridItem(.adaptive(minimum: 320), spacing: 16)]
 
@@ -29,6 +30,11 @@ struct DashboardView: View {
                         .buttonStyle(.bordered)
                     Button { diskModel.check() } label: { Label("Refresh", systemImage: "arrow.clockwise") }
                         .buttonStyle(.bordered)
+                    Button { showSettings.toggle() } label: { Image(systemName: "gearshape") }
+                        .buttonStyle(.bordered)
+                        .popover(isPresented: $showSettings, arrowEdge: .top) {
+                            ScanSettingsView(vm: vm)
+                        }
                 }
                 .padding(.horizontal, 4)
                 .padding(.bottom, 4)
@@ -176,94 +182,6 @@ struct DashboardView: View {
                         }
                         .frame(minHeight: 280)
 
-                        // Scan Settings
-                        WidgetCard("Scan Settings", icon: "gearshape", iconColor: .gray) {
-                            VStack(alignment: .leading, spacing: 10) {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    Toggle("Include system folders (/Applications, /Library)", isOn: $vm.includeSystem)
-                                    Toggle("Include external volumes", isOn: $vm.includeExternal)
-                                    
-                                    HStack {
-                                        Text("Minimum size")
-                                        Spacer()
-                                        Stepper(value: $vm.minSizeMB, in: 0...10240, step: 50) { 
-                                            Text("\(vm.minSizeMB) MB")
-                                                .frame(minWidth: 60, alignment: .trailing)
-                                        }
-                                    }
-                                    
-                                    HStack(spacing: 20) {
-                                        Toggle("Documents", isOn: $vm.includeDocuments)
-                                        Toggle("Media", isOn: $vm.includeMedia)
-                                        Toggle("Archives", isOn: $vm.includeArchives)
-                                        Toggle("Other", isOn: $vm.includeOther)
-                                    }
-                                    
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("Ignore patterns (comma or newline, case-insensitive)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        TextField("e.g. node_modules, .git, cache", text: $vm.ignorePatternsRaw)
-                                            .textFieldStyle(.roundedBorder)
-                                    }
-                                }
-                                .frame(minHeight: 140)
-                                
-                                Divider()
-                                
-                                // Fixed height section for extra roots to prevent layout shifts
-                                VStack(spacing: 8) {
-                                    HStack {
-                                        Button { vm.addExtraRootViaPanel() } label: { 
-                                            Label("Add Extra Root…", systemImage: "folder.badge.plus") 
-                                        }
-                                        .buttonStyle(.bordered)
-                                        Spacer()
-                                        
-                                        // Fixed width for menu to prevent shifts
-                                        HStack {
-                                            if !vm.extraRoots.isEmpty {
-                                                Menu("Extra Roots (\(vm.extraRoots.count))") {
-                                                    ForEach(vm.extraRoots, id: \.path) { u in
-                                                        Button(action: {}) {
-                                                            Label(u.lastPathComponent, systemImage: "folder")
-                                                        }
-                                                        Button(role: .destructive) { 
-                                                            vm.removeExtraRoot(u) 
-                                                        } label: { 
-                                                            Label("Remove \(u.lastPathComponent)", systemImage: "trash")
-                                                        }
-                                                        Divider()
-                                                    }
-                                                }
-                                                .buttonStyle(.bordered)
-                                            } else {
-                                                Text("No extra roots")
-                                                    .foregroundStyle(.secondary)
-                                                    .font(.caption)
-                                            }
-                                        }
-                                        .frame(minWidth: 120, alignment: .trailing)
-                                    }
-                                    
-                                    HStack(spacing: 8) {
-                                        Button { vm.openFullDiskAccessSettings() } label: { 
-                                            Label("Full Disk Access…", systemImage: "lock.shield") 
-                                        }
-                                        .buttonStyle(.bordered)
-                                        
-                                        Spacer()
-                                        
-                                        Button { vm.scanFullDisk() } label: { 
-                                            Label("Rescan", systemImage: "arrow.clockwise") 
-                                        }
-                                        .buttonStyle(.borderedProminent)
-                                    }
-                                }
-                                .frame(minHeight: 60)
-                            }
-                        }
-                        .frame(minHeight: 300)
                     }
 
                     VStack(spacing: 16) {
@@ -439,5 +357,102 @@ struct DashboardView: View {
                 Text("Total: \(total.dsHumanBinary)")
             }
         }
+    }
+}
+
+struct ScanSettingsView: View {
+    @ObservedObject var vm: DashboardViewModel
+
+    private var roots: [URL] { vm.extraRoots }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Scan Settings")
+                    .font(.title3.weight(.semibold))
+
+                Toggle("Include system folders (/Applications, /Library)", isOn: $vm.includeSystem)
+                Toggle("Include external volumes", isOn: $vm.includeExternal)
+
+                HStack {
+                    Text("Minimum size")
+                    Spacer()
+                    Stepper(value: $vm.minSizeMB, in: 0...10240, step: 50) {
+                        Text("\(vm.minSizeMB) MB")
+                            .frame(minWidth: 60, alignment: .trailing)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("File categories")
+                        .font(.subheadline.weight(.medium))
+                    HStack(spacing: 20) {
+                        Toggle("Documents", isOn: $vm.includeDocuments)
+                        Toggle("Media", isOn: $vm.includeMedia)
+                        Toggle("Archives", isOn: $vm.includeArchives)
+                        Toggle("Other", isOn: $vm.includeOther)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Ignore patterns (comma or newline, case-insensitive)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    TextField("e.g. node_modules, .git, cache", text: $vm.ignorePatternsRaw)
+                        .textFieldStyle(.roundedBorder)
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Button { vm.addExtraRootViaPanel() } label: {
+                            Label("Add Extra Root…", systemImage: "folder.badge.plus")
+                        }
+                        Button { vm.openFullDiskAccessSettings() } label: {
+                            Label("Full Disk Access…", systemImage: "lock.shield")
+                        }
+                        Spacer()
+                    }
+
+                    if roots.isEmpty {
+                        Text("No extra roots added yet.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Menu("Extra Roots (\(roots.count))") {
+                            ForEach(Array(roots.enumerated()), id: \.element.path) { index, url in
+                                Button(action: {}) {
+                                    Label(url.lastPathComponent, systemImage: "folder")
+                                }
+                                Button(role: .destructive) {
+                                    vm.removeExtraRoot(url)
+                                } label: {
+                                    Label("Remove \(url.lastPathComponent)", systemImage: "trash")
+                                }
+                                if index != roots.count - 1 {
+                                    Divider()
+                                }
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                }
+
+                Divider()
+
+                HStack {
+                    Button { vm.scanFullDisk() } label: {
+                        Label("Rescan", systemImage: "arrow.clockwise")
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    Spacer()
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(20)
+        .frame(minWidth: 360)
     }
 }
