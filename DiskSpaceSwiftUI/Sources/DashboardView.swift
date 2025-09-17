@@ -8,6 +8,10 @@ struct DashboardView: View {
     @State private var pendingTrash: DSFileItem? = nil
     @State private var showConfirmTrash = false
 
+    @State private var selection: Set<DSFileItem> = []
+    @State private var batchTrash: [DSFileItem] = []
+    @State private var showConfirmBatch = false
+
     private let columns = [GridItem(.adaptive(minimum: 320), spacing: 16)]
 
     var body: some View {
@@ -44,6 +48,14 @@ struct DashboardView: View {
                             .padding(.vertical, 8)
                             .padding(.horizontal, 12)
                             .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.06)))
+
+                            if vm.isScanning {
+                                ProgressView(value: vm.progress) {
+                                    Text(vm.progressDetail).font(.caption)
+                                }
+                                Button("Cancel Scan", role: .destructive) { vm.cancelScan() }
+                                    .buttonStyle(.bordered)
+                            }
                         }
                     }
 
@@ -73,37 +85,52 @@ struct DashboardView: View {
                         }
                     }
 
-                    // Top Large Files
+                    // Top Large Files with selection
                     WidgetCard("Top Large Files", icon: "doc.text.fill", iconColor: .red) {
-                        ScrollView {
-                            VStack(spacing: 0) {
-                                ForEach(vm.topFiles.indices, id: \.self) { idx in
-                                    let f = vm.topFiles[idx]
-                                    HStack {
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(f.name).font(.subheadline.weight(.medium))
-                                            Text(f.path).font(.caption).foregroundStyle(.secondary)
+                        VStack(spacing: 8) {
+                            HStack {
+                                Button("Reveal Selected") {
+                                    for f in selection { vm.reveal(f) }
+                                }.disabled(selection.isEmpty)
+                                Button("Trash Selected", role: .destructive) {
+                                    batchTrash = Array(selection)
+                                    showConfirmBatch = true
+                                }.disabled(selection.isEmpty)
+                                Spacer()
+                            }
+                            ScrollView {
+                                VStack(spacing: 0) {
+                                    ForEach(vm.topFiles.indices, id: \.self) { idx in
+                                        let f = vm.topFiles[idx]
+                                        HStack {
+                                            Toggle("", isOn: Binding(get: { selection.contains { $0.id == f.id } }, set: { on in
+                                                if on { selection.insert(f) } else { selection.remove(f) }
+                                            })).labelsHidden().toggleStyle(.checkbox)
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(f.name).font(.subheadline.weight(.medium))
+                                                Text(f.path).font(.caption).foregroundStyle(.secondary)
+                                            }
+                                            Spacer()
+                                            Text(f.sizeText).font(.subheadline.weight(.medium))
+                                            Menu {
+                                                Button("Reveal in Finder") { vm.reveal(f) }
+                                                Button("Reveal in Terminal") { vm.revealInTerminal(f) }
+                                                Button("Copy Path") { vm.copyPath(f) }
+                                                Button(role: .destructive) { pendingTrash = f; showConfirmTrash = true } label: { Text("Move to Trash…") }
+                                            } label: {
+                                                Image(systemName: "ellipsis.circle").imageScale(.medium)
+                                            }
+                                            .menuStyle(.borderlessButton)
                                         }
-                                        Spacer()
-                                        Text(f.sizeText).font(.subheadline.weight(.medium))
-                                        Menu {
-                                            Button("Reveal in Finder") { vm.reveal(f) }
-                                            Button("Reveal in Terminal") { vm.revealInTerminal(f) }
-                                            Button("Copy Path") { vm.copyPath(f) }
-                                            Button(role: .destructive) { pendingTrash = f; showConfirmTrash = true } label: { Text("Move to Trash…") }
-                                        } label: {
-                                            Image(systemName: "ellipsis.circle").imageScale(.medium)
+                                        .padding(.vertical, 10)
+                                        .overlay(alignment: .bottom) {
+                                            if idx != vm.topFiles.indices.last { Divider() }
                                         }
-                                        .menuStyle(.borderlessButton)
-                                    }
-                                    .padding(.vertical, 10)
-                                    .overlay(alignment: .bottom) {
-                                        if idx != vm.topFiles.indices.last { Divider() }
                                     }
                                 }
                             }
+                            .frame(minHeight: 120, maxHeight: 220)
                         }
-                        .frame(minHeight: 120, maxHeight: 220)
                     }
 
                     // Historical Trends (from persisted history)
@@ -142,9 +169,17 @@ struct DashboardView: View {
                                         if diskModel.problems.isEmpty {
                                             Text(vm.cleanupMessage).foregroundStyle(.secondary)
                                         } else {
-                                            VStack(alignment: .leading) {
+                                            VStack(alignment: .leading, spacing: 8) {
                                                 ForEach(diskModel.problems.prefix(5)) { p in
-                                                    HStack { Text(p.description); Spacer(); Text(p.humanSize).foregroundStyle(.orange) }
+                                                    HStack(alignment: .center) {
+                                                        VStack(alignment: .leading) {
+                                                            Text(p.description)
+                                                            Text(p.humanSize).foregroundStyle(.orange).font(.caption)
+                                                        }
+                                                        Spacer()
+                                                        Button("Run") { diskModel.runProblemCommand(p) }.buttonStyle(.bordered)
+                                                        Button("Copy") { diskModel.copyProblemCommand(p) }
+                                                    }
                                                     Divider()
                                                 }
                                             }
@@ -241,6 +276,23 @@ struct DashboardView: View {
             Button("Cancel", role: .cancel) { pendingTrash = nil }
         } message: {
             if let item = pendingTrash { Text("Size: \(item.sizeText)\nPath: \(item.url.path)") }
+        }
+        .confirmationDialog(
+            "Move \(batchTrash.count) items to Trash?",
+            isPresented: $showConfirmBatch,
+            titleVisibility: .visible
+        ) {
+            Button("Trash Items", role: .destructive) {
+                for f in batchTrash { _ = vm.trash(f) }
+                selection.removeAll()
+                batchTrash.removeAll()
+            }
+            Button("Cancel", role: .cancel) { batchTrash.removeAll() }
+        } message: {
+            if !batchTrash.isEmpty {
+                let total = batchTrash.reduce(Int64(0)) { $0 + $1.size }
+                Text("Total: \(total.dsHumanBinary)")
+            }
         }
     }
 }

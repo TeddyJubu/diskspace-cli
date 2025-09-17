@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 @main
 struct DiskSpaceApp: App {
@@ -157,6 +158,17 @@ final class DiskModel: ObservableObject {
 
     func applyThreshold() {
         _ = try? self.run(["config", "set", "threshold", String(threshold)])
+    }
+    // Helpers for cleanup actions
+    func runProblemCommand(_ p: Problem) {
+        DispatchQueue.global().async {
+            _ = try? self.run(["clean", "--id", p.id])
+            DispatchQueue.main.async { self.check() }
+        }
+    }
+    func copyProblemCommand(_ p: Problem) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(p.command, forType: .string)
     }
 }
 

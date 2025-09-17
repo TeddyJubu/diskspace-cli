@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 
 // Utility for human-readable bytes
 extension Int64 {
@@ -12,7 +13,7 @@ extension Int64 {
     }
 }
 
-struct DSFileItem: Identifiable {
+struct DSFileItem: Identifiable, Hashable {
     let id = UUID()
     let url: URL
     let size: Int64
@@ -35,6 +36,13 @@ struct DSFileTypeUsage: Identifiable {
     let color: Color
 }
 
+final class CancellationFlag {
+    private let lock = NSLock()
+    private var v = false
+    func store(_ value: Bool) { lock.lock(); v = value; lock.unlock() }
+    func load() -> Bool { lock.lock(); let r = v; lock.unlock(); return r }
+}
+
 @MainActor
 final class DashboardViewModel: ObservableObject {
     // Summary
@@ -49,6 +57,9 @@ final class DashboardViewModel: ObservableObject {
     // Cleanup
     @Published var cleanupMessage: String = "No significant opportunities found right now."
     @Published var isScanning: Bool = false
+    @Published var progress: Double = 0
+    @Published var progressDetail: String = ""
+    private let cancelFlag = CancellationFlag()
 
     // Settings
     @AppStorage("ds.includeSystem") var includeSystem: Bool = false
@@ -105,26 +116,57 @@ final class DashboardViewModel: ObservableObject {
 
     // MARK: Scan based on settings
     func scanFullDisk() {
-        // capture settings on main actor to avoid cross-actor awaits
+        // capture settings
         let includeSystem = self.includeSystem
         let includeExternal = self.includeExternal
         let extra = self.extraRoots
+        let minBytes = Int64(self.minSizeMB) * 1024 * 1024
+        let includeSet: Set<FileCategory> = Set([
+            self.includeDocuments ? .documents : nil,
+            self.includeMedia ? .media : nil,
+            self.includeArchives ? .archives : nil,
+            self.includeOther ? .other : nil
+        ].compactMap { $0 })
+        let ignore = self.ignorePatterns
+
         isScanning = true
-        Task.detached { [weak self, includeSystem, includeExternal, extra] in
+        progress = 0
+        progressDetail = "Preparing…"
+        cancelFlag.store(false)
+
+        Task.detached { [weak self, includeSystem, includeExternal, extra, minBytes, includeSet, ignore] in
             guard let self else { return }
-            let start = Date()
             let roots = Self.buildScanPaths(includeSystem: includeSystem, includeExternal: includeExternal, extra: extra)
-            let result = Self.scan(paths: roots)
-            let duration = Date().timeIntervalSince(start)
-            print("Scan finished in \(String(format: "%.1f", duration))s, files: \(result.files.count)")
+            let filters = ScanFilters(minSizeBytes: minBytes, include: includeSet, ignorePatterns: ignore)
+            let out = Scanner.run(paths: roots, filters: filters, topLimit: 200, useCache: true, onProgress: { p, label in
+                Task { @MainActor in
+                    self.progress = p
+                    self.progressDetail = label
+                }
+            }, isCancelled: { self.cancelFlag.load() })
+
             await MainActor.run {
-                self.topFiles = result.top
-                self.fileTypeUsage = result.usage
-                self.cleanupMessage = result.recommendation
+                self.progress = 1
+                self.progressDetail = "Done"
                 self.isScanning = false
+                // Map results
+                self.topFiles = out.top.map { DSFileItem(url: $0.url, size: $0.size) }
+                let totalBytes = out.totals.values.reduce(0, +)
+                let ordered: [(FileCategory, Color)] = [(.documents, .blue), (.media, .red), (.archives, .yellow), (.other, .green)]
+                self.fileTypeUsage = ordered.map { cat, color in
+                    let pct = totalBytes > 0 ? Double(out.totals[cat, default: 0]) / Double(totalBytes) * 100 : 0
+                    return DSFileTypeUsage(type: cat.title, percent: pct, color: color)
+                }
+                if let biggest = out.top.first {
+                    self.cleanupMessage = "Consider reviewing \(biggest.url.lastPathComponent) (\(biggest.size.dsHumanBinary))."
+                } else {
+                    self.cleanupMessage = "No significant opportunities found right now."
+                }
             }
         }
     }
+
+    func cancelScan() { cancelFlag.store(true) }
 
     // MARK: File actions
     func reveal(_ item: DSFileItem) {
@@ -221,31 +263,7 @@ final class DashboardViewModel: ObservableObject {
         } catch { print("save history error", error) }
     }
 
-    // MARK: Scanner Implementation
-    private struct Accum {
-        var totals: [String: Int64] = [:]
-        var files: [DSFileItem] = []
-    }
-
-    private struct CacheEntry: Codable { let size: Int64; let mtime: TimeInterval; let category: String }
-
-    nonisolated private static func cacheURL() -> URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = base.appendingPathComponent("DiskSpaceDashboard", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("scanCache.json")
-    }
-
-    nonisolated private static func loadCache() -> [String: CacheEntry] {
-        let url = cacheURL()
-        guard let data = try? Data(contentsOf: url) else { return [:] }
-        return (try? JSONDecoder().decode([String: CacheEntry].self, from: data)) ?? [:]
-    }
-
-    nonisolated private static func saveCache(_ cache: [String: CacheEntry]) {
-        let url = cacheURL()
-        if let data = try? JSONEncoder().encode(cache) { try? data.write(to: url, options: .atomic) }
-    }
+    // MARK: Scan roots builders
 
     nonisolated private static func defaultUserPaths() -> [URL] {
         let home = FileManager.default.homeDirectoryForCurrentUser
@@ -287,94 +305,5 @@ final class DashboardViewModel: ObservableObject {
         var seen = Set<String>()
         return roots.filter { seen.insert($0.path).inserted }
     }
-
-
-
-    nonisolated private static func scan(paths: [URL]) -> (top: [DSFileItem], usage: [DSFileTypeUsage], recommendation: String, files: [DSFileItem]) {
-        let keys: [URLResourceKey] = [.isRegularFileKey, .isDirectoryKey, .isPackageKey, .fileAllocatedSizeKey, .totalFileAllocatedSizeKey, .contentModificationDateKey]
-        var acc = Accum()
-        let fm = FileManager.default
-        var cache = loadCache()
-        let minSizeBytes = Int64((UserDefaults.standard.integer(forKey: "ds.minSizeMB")) * 1024 * 1024)
-        let allowDocs = UserDefaults.standard.bool(forKey: "ds.includeDocuments")
-        let allowMedia = UserDefaults.standard.bool(forKey: "ds.includeMedia")
-        let allowArchives = UserDefaults.standard.bool(forKey: "ds.includeArchives")
-        let allowOther = UserDefaults.standard.bool(forKey: "ds.includeOther")
-        let ignore = (UserDefaults.standard.string(forKey: "ds.ignorePatterns") ?? "")
-            .replacingOccurrences(of: "\n", with: ",")
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
-            .filter { !$0.isEmpty }
-
-        func allowedCategory(_ cat: String) -> Bool {
-            switch cat { case "Documents": return allowDocs; case "Media": return allowMedia; case "Archives": return allowArchives; default: return allowOther }
-        }
-
-        for root in paths {
-            if let en = fm.enumerator(at: root, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles, .skipsPackageDescendants]) {
-                for case let url as URL in en {
-                    autoreleasepool {
-                        do {
-                            let values = try url.resourceValues(forKeys: Set(keys))
-                            guard values.isRegularFile == true else { return }
-                            let size = Int64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
-                            guard size >= minSizeBytes else { return }
-                            let pathLower = url.path.lowercased()
-                            if ignore.contains(where: { pathLower.contains($0) }) { return }
-
-                            // cache by path + mtime + size
-                            let mtime = values.contentModificationDate?.timeIntervalSince1970 ?? 0
-                            let key = url.path
-                            let cat: String
-                            if let ce = cache[key], ce.size == size, ce.mtime == mtime {
-                                cat = ce.category
-                            } else {
-                                cat = category(for: url)
-                                cache[key] = CacheEntry(size: size, mtime: mtime, category: cat)
-                            }
-                            guard allowedCategory(cat) else { return }
-
-                            let item = DSFileItem(url: url, size: size)
-                            acc.files.append(item)
-                            acc.totals[cat, default: 0] += size
-                        } catch {
-                            // skip unreadable
-                        }
-                    }
-                }
-            }
-        }
-        saveCache(cache)
-
-        // Top 20
-        let top = Array(acc.files.sorted { $0.size > $1.size }.prefix(20))
-
-        // Usage breakdown
-        let totalBytes = acc.totals.values.reduce(0, +)
-        let order = ["Documents","Media","Archives","Other"]
-        let usage: [DSFileTypeUsage] = order.map { key in
-            let pct = totalBytes > 0 ? Double(acc.totals[key, default: 0]) / Double(totalBytes) * 100 : 0
-            let color: Color = {
-                switch key { case "Documents": return .blue; case "Media": return .red; case "Archives": return .yellow; default: return .green }
-            }()
-            return DSFileTypeUsage(type: key, percent: pct, color: color)
-        }
-
-        let recommendation: String
-        if let biggest = top.first {
-            recommendation = "Consider reviewing \(biggest.name) (\(biggest.sizeText))."
-        } else {
-            recommendation = "No significant opportunities found right now."
-        }
-
-        return (top, usage, recommendation, acc.files)
-    }
-
-    nonisolated private static func category(for url: URL) -> String {
-        let ext = url.pathExtension.lowercased()
-        if ["pdf","doc","docx","txt","rtf","md","pages","numbers","key","ppt","pptx","xls","xlsx"].contains(ext) { return "Documents" }
-        if ["png","jpg","jpeg","heic","gif","webp","mov","mp4","m4v","avi","mkv","mp3","aac","wav","aiff","flac"].contains(ext) { return "Media" }
-        if ["zip","rar","7z","tar","gz","tgz","bz2"].contains(ext) { return "Archives" }
-        return "Other"
-    }
 }
+
