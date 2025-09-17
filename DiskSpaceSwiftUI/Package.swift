@@ -16,6 +16,11 @@ let package = Package(
             swiftSettings: [
                 .unsafeFlags(["-parse-as-library"]) // allow @main App in SPM
             ]
+        ),
+        .testTarget(
+            name: "DiskSpaceSwiftUITests",
+            dependencies: ["DiskSpaceSwiftUI"],
+            path: "Tests/DiskSpaceSwiftUITests"
         )
     ]
 )
