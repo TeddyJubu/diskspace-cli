@@ -54,6 +54,13 @@ final class DashboardViewModel: ObservableObject {
     @AppStorage("ds.includeSystem") var includeSystem: Bool = false
     @AppStorage("ds.includeExternal") var includeExternal: Bool = false
     @AppStorage("ds.extraRootsJSON") private var extraRootsJSON: String = "[]" // [String]
+    // Filters
+    @AppStorage("ds.minSizeMB") var minSizeMB: Int = 50
+    @AppStorage("ds.includeDocuments") var includeDocuments: Bool = true
+    @AppStorage("ds.includeMedia") var includeMedia: Bool = true
+    @AppStorage("ds.includeArchives") var includeArchives: Bool = true
+    @AppStorage("ds.includeOther") var includeOther: Bool = true
+    @AppStorage("ds.ignorePatterns") var ignorePatternsRaw: String = "" // comma or newline separated substrings
 
     var extraRoots: [URL] {
         get {
@@ -65,6 +72,14 @@ final class DashboardViewModel: ObservableObject {
                 extraRootsJSON = String(data: data, encoding: .utf8) ?? "[]"
             }
         }
+    }
+
+    var ignorePatterns: [String] {
+        ignorePatternsRaw
+            .replacingOccurrences(of: "\n", with: ",")
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+            .filter { !$0.isEmpty }
     }
 
     // MARK: Lifecycle
@@ -114,6 +129,19 @@ final class DashboardViewModel: ObservableObject {
     // MARK: File actions
     func reveal(_ item: DSFileItem) {
         NSWorkspace.shared.activateFileViewerSelecting([item.url])
+    }
+
+    func revealInTerminal(_ item: DSFileItem) {
+        let dir = item.url.deletingLastPathComponent()
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        proc.arguments = ["-a", "Terminal", dir.path]
+        try? proc.run()
+    }
+
+    func copyPath(_ item: DSFileItem) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(item.url.path, forType: .string)
     }
 
     func trash(_ item: DSFileItem) -> Bool {
@@ -199,6 +227,26 @@ final class DashboardViewModel: ObservableObject {
         var files: [DSFileItem] = []
     }
 
+    private struct CacheEntry: Codable { let size: Int64; let mtime: TimeInterval; let category: String }
+
+    nonisolated private static func cacheURL() -> URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let dir = base.appendingPathComponent("DiskSpaceDashboard", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("scanCache.json")
+    }
+
+    nonisolated private static func loadCache() -> [String: CacheEntry] {
+        let url = cacheURL()
+        guard let data = try? Data(contentsOf: url) else { return [:] }
+        return (try? JSONDecoder().decode([String: CacheEntry].self, from: data)) ?? [:]
+    }
+
+    nonisolated private static func saveCache(_ cache: [String: CacheEntry]) {
+        let url = cacheURL()
+        if let data = try? JSONEncoder().encode(cache) { try? data.write(to: url, options: .atomic) }
+    }
+
     nonisolated private static func defaultUserPaths() -> [URL] {
         let home = FileManager.default.homeDirectoryForCurrentUser
         let subdirs = ["Downloads","Documents","Desktop","Movies","Music","Pictures"]
@@ -243,9 +291,24 @@ final class DashboardViewModel: ObservableObject {
 
 
     nonisolated private static func scan(paths: [URL]) -> (top: [DSFileItem], usage: [DSFileTypeUsage], recommendation: String, files: [DSFileItem]) {
-        let keys: [URLResourceKey] = [.isRegularFileKey, .isDirectoryKey, .isPackageKey, .fileAllocatedSizeKey, .totalFileAllocatedSizeKey]
+        let keys: [URLResourceKey] = [.isRegularFileKey, .isDirectoryKey, .isPackageKey, .fileAllocatedSizeKey, .totalFileAllocatedSizeKey, .contentModificationDateKey]
         var acc = Accum()
         let fm = FileManager.default
+        var cache = loadCache()
+        let minSizeBytes = Int64((UserDefaults.standard.integer(forKey: "ds.minSizeMB")) * 1024 * 1024)
+        let allowDocs = UserDefaults.standard.bool(forKey: "ds.includeDocuments")
+        let allowMedia = UserDefaults.standard.bool(forKey: "ds.includeMedia")
+        let allowArchives = UserDefaults.standard.bool(forKey: "ds.includeArchives")
+        let allowOther = UserDefaults.standard.bool(forKey: "ds.includeOther")
+        let ignore = (UserDefaults.standard.string(forKey: "ds.ignorePatterns") ?? "")
+            .replacingOccurrences(of: "\n", with: ",")
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+            .filter { !$0.isEmpty }
+
+        func allowedCategory(_ cat: String) -> Bool {
+            switch cat { case "Documents": return allowDocs; case "Media": return allowMedia; case "Archives": return allowArchives; default: return allowOther }
+        }
 
         for root in paths {
             if let en = fm.enumerator(at: root, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles, .skipsPackageDescendants]) {
@@ -255,10 +318,25 @@ final class DashboardViewModel: ObservableObject {
                             let values = try url.resourceValues(forKeys: Set(keys))
                             guard values.isRegularFile == true else { return }
                             let size = Int64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
-                            guard size > 0 else { return }
+                            guard size >= minSizeBytes else { return }
+                            let pathLower = url.path.lowercased()
+                            if ignore.contains(where: { pathLower.contains($0) }) { return }
+
+                            // cache by path + mtime + size
+                            let mtime = values.contentModificationDate?.timeIntervalSince1970 ?? 0
+                            let key = url.path
+                            let cat: String
+                            if let ce = cache[key], ce.size == size, ce.mtime == mtime {
+                                cat = ce.category
+                            } else {
+                                cat = category(for: url)
+                                cache[key] = CacheEntry(size: size, mtime: mtime, category: cat)
+                            }
+                            guard allowedCategory(cat) else { return }
+
                             let item = DSFileItem(url: url, size: size)
                             acc.files.append(item)
-                            acc.totals[category(for: url), default: 0] += size
+                            acc.totals[cat, default: 0] += size
                         } catch {
                             // skip unreadable
                         }
@@ -266,6 +344,7 @@ final class DashboardViewModel: ObservableObject {
                 }
             }
         }
+        saveCache(cache)
 
         // Top 20
         let top = Array(acc.files.sorted { $0.size > $1.size }.prefix(20))

@@ -5,6 +5,8 @@ import Charts
 struct DashboardView: View {
     @EnvironmentObject var diskModel: DiskModel // reuse scheduling + CLI integration
     @StateObject private var vm = DashboardViewModel()
+    @State private var pendingTrash: DSFileItem? = nil
+    @State private var showConfirmTrash = false
 
     private let columns = [GridItem(.adaptive(minimum: 320), spacing: 16)]
 
@@ -86,7 +88,9 @@ struct DashboardView: View {
                                         Text(f.sizeText).font(.subheadline.weight(.medium))
                                         Menu {
                                             Button("Reveal in Finder") { vm.reveal(f) }
-                                            Button(role: .destructive) { vm.trash(f) } label: { Text("Move to Trash") }
+                                            Button("Reveal in Terminal") { vm.revealInTerminal(f) }
+                                            Button("Copy Path") { vm.copyPath(f) }
+                                            Button(role: .destructive) { pendingTrash = f; showConfirmTrash = true } label: { Text("Move to Trash…") }
                                         } label: {
                                             Image(systemName: "ellipsis.circle").imageScale(.medium)
                                         }
@@ -185,6 +189,21 @@ struct DashboardView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             Toggle("Include system folders (/Applications, /Library)", isOn: $vm.includeSystem)
                             Toggle("Include external volumes", isOn: $vm.includeExternal)
+                            HStack {
+                                Text("Minimum size")
+                                Spacer()
+                                Stepper(value: $vm.minSizeMB, in: 0...10240, step: 50) { Text("\(vm.minSizeMB) MB") }
+                            }
+                            HStack {
+                                Toggle("Documents", isOn: $vm.includeDocuments)
+                                Toggle("Media", isOn: $vm.includeMedia)
+                                Toggle("Archives", isOn: $vm.includeArchives)
+                                Toggle("Other", isOn: $vm.includeOther)
+                            }
+                            VStack(alignment: .leading) {
+                                Text("Ignore patterns (comma or newline, case-insensitive)").font(.caption).foregroundStyle(.secondary)
+                                TextField("e.g. node_modules, .git, cache", text: $vm.ignorePatternsRaw)
+                            }
                             Divider()
                             HStack {
                                 Button { vm.addExtraRootViaPanel() } label: { Label("Add Extra Root…", systemImage: "folder.badge.plus") }
@@ -211,5 +230,17 @@ struct DashboardView: View {
         }
         .background(Color(nsColor: .windowBackgroundColor).opacity(0.3))
         .onAppear { vm.onAppear(); diskModel.check() }
+        .confirmationDialog(
+            pendingTrash.map { "Move \($0.name) to Trash?" } ?? "",
+            isPresented: $showConfirmTrash,
+            titleVisibility: .visible
+        ) {
+            if let item = pendingTrash {
+                Button("Move to Trash", role: .destructive) { _ = vm.trash(item); pendingTrash = nil }
+            }
+            Button("Cancel", role: .cancel) { pendingTrash = nil }
+        } message: {
+            if let item = pendingTrash { Text("Size: \(item.sizeText)\nPath: \(item.url.path)") }
+        }
     }
 }
