@@ -14,20 +14,39 @@ struct DiskSpaceApp: App {
 
         if #available(macOS 13.0, *) {
             MenuBarExtra("DiskSpace", systemImage: model.menuBarSystemImage) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Usage: \(model.usage)%  •  Free: \(model.free)")
-                    .font(.system(.body, design: .rounded))
-                HStack {
-                    Button("Check Now") { model.check() }
-                    Button("Auto Clean") { model.autoClean() }
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Usage: \(model.usage)%  •  Free: \(model.free)")
+                        .font(.system(.body, design: .rounded))
+                    HStack {
+                        Button("Check Now") { model.check() }
+                        Button("Auto Clean") { model.autoClean() }
+                    }
+                    Divider()
+                    // Preferences popover
+                    DisclosureGroup("Preferences") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text("Threshold")
+                                Slider(value: Binding(get: {
+                                    Double(model.threshold)
+                                }, set: { model.threshold = Int($0) }), in: 50...95)
+                                Text("\(model.threshold)%").frame(width: 44, alignment: .trailing)
+                            }
+                            Toggle("Notifications", isOn: $model.notificationsEnabled)
+                            HStack {
+                                let schedText = model.scheduledDate.map { DateFormatter.hm.string(from: $0) } ?? "Not scheduled"
+                                Text("Scheduled: \(schedText)")
+                                Spacer()
+                            }
+                        }
+                    }
+                    Divider()
+                    Button("Open App") { NSApp.activate(ignoringOtherApps: true) }
+                    Button("Quit") { NSApp.terminate(nil) }
                 }
-                Divider()
-                Button("Open App") { NSApp.activate(ignoringOtherApps: true) }
-                Button("Quit") { NSApp.terminate(nil) }
+                .padding(10)
+                .frame(width: 300)
             }
-            .padding(8)
-            .frame(width: 240)
-        }
         }
     }
 }
@@ -37,7 +56,12 @@ final class DiskModel: ObservableObject {
     @Published var free: String = ""
     @Published var problems: [Problem] = []
     @Published var error: String?
-    @AppStorage("scheduleTime") var scheduleTime: Double = Date().timeIntervalSince1970
+
+    // Preferences
+    @AppStorage("threshold") var threshold: Int = 80
+    @AppStorage("notificationsEnabled") var notificationsEnabled: Bool = true
+    @AppStorage("scheduleTime") var scheduleTime: Double = Date().timeIntervalSince1970 // last chosen time
+    @Published var scheduledDate: Date? = nil // nil = not scheduled
 
     var menuBarSystemImage: String {
         if usage < 60 { return "internaldrive" }
@@ -75,6 +99,8 @@ final class DiskModel: ObservableObject {
                         self.problems = resp.cleanup_opportunities.problems
                     }
                 }
+                // also update schedule status
+                self.fetchScheduleStatus()
             } catch {
                 DispatchQueue.main.async { self.error = error.localizedDescription }
             }
@@ -100,89 +126,143 @@ final class DiskModel: ObservableObject {
         let cal = Calendar.current
         let h = cal.component(.hour, from: date)
         let m = cal.component(.minute, from: date)
-        _ = try? self.run(["schedule", String(format: "%02d:%02d", h, m)])
+        var args = ["schedule", String(format: "%02d:%02d", h, m)]
+        if notificationsEnabled == false { args.append("--no-notify") }
+        _ = try? self.run(args)
         scheduleTime = date.timeIntervalSince1970
+        scheduledDate = date
     }
 
-    func unschedule() { _ = try? self.run(["unschedule"]) }
+    func unschedule() {
+        _ = try? self.run(["unschedule"])
+        scheduledDate = nil
+    }
+
+    func fetchScheduleStatus() {
+        let out = try? self.run(["status"]) // e.g., "status: scheduled at 10:00" or "status: not scheduled"
+        guard let out else { return }
+        if let range = out.range(of: #"status: scheduled at ([0-9]{2}):([0-9]{2})"#, options: .regularExpression) {
+            let str = String(out[range])
+            let comps = str.components(separatedBy: CharacterSet.decimalDigits.inverted).compactMap { Int($0) }
+            if comps.count >= 2 {
+                let cal = Calendar.current
+                var d = Date()
+                d = cal.date(bySettingHour: comps[0], minute: comps[1], second: 0, of: d) ?? d
+                DispatchQueue.main.async { self.scheduledDate = d }
+            }
+        } else {
+            DispatchQueue.main.async { self.scheduledDate = nil }
+        }
+    }
+
+    func applyThreshold() {
+        _ = try? self.run(["config", "set", "threshold", String(threshold)])
+    }
 }
 
 struct ContentView: View {
     @EnvironmentObject var model: DiskModel
     @State private var scheduleDate = Date()
+    @State private var prefExpanded = false
+    @State private var enableSchedule = false
+    @State private var showSchedulePopover = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .center) {
+        VStack(alignment: .leading, spacing: 20) {
+            // Header
+            HStack(spacing: 10) {
                 Image(systemName: "internaldrive")
                     .imageScale(.large)
                     .foregroundStyle(gradient)
                 Text("DiskSpace")
                     .font(.system(.largeTitle, design: .rounded).weight(.bold))
+                Spacer()
             }
 
-            if #available(macOS 13.0, *) {
-                Gauge(value: Double(model.usage), in: 0...100) {
-                Text("Usage")
-            } currentValueLabel: {
-                Text("\(model.usage)%")
-                    .bold()
-            }
-            .tint(usageColor)
-                .gaugeStyle(.accessoryLinearCapacity)
-                .animation(.easeInOut(duration: 0.35), value: model.usage)
-            } else {
-                ProgressView(value: Double(model.usage), total: 100)
+            // Usage
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Usage").font(.subheadline).foregroundColor(.secondary)
+                if #available(macOS 13.0, *) {
+                    Gauge(value: Double(model.usage), in: 0...100) { EmptyView() } currentValueLabel: {
+                        Text("\(model.usage)%").bold()
+                    }
                     .tint(usageColor)
+                    .gaugeStyle(.accessoryLinearCapacity)
+                    .animation(.easeInOut(duration: 0.35), value: model.usage)
+                } else {
+                    ProgressView(value: Double(model.usage), total: 100)
+                        .tint(usageColor)
+                }
             }
 
+            // Stats
             HStack {
-                Label("Free: \(model.free)", systemImage: "arrow.down.to.line")
+                Label("Free: \(model.free)", systemImage: "externaldrive.badge.minus")
+                    .font(.headline)
                 Spacer()
                 if !model.problems.isEmpty {
                     Label("\(model.problems.count) suggestions", systemImage: "lightbulb")
                         .foregroundStyle(.orange)
                 }
             }
-            .font(.headline)
 
+            // Opportunities
             GroupBox("Cleanup Opportunities") {
                 if model.problems.isEmpty {
                     Text("No significant opportunities right now.")
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 6)
                 } else {
                     List(model.problems) { p in
                         HStack {
                             Text(p.description)
                             Spacer()
-if #available(macOS 13.3, *) { Text(p.humanSize).monospaced().foregroundStyle(.orange) } else { Text(p.humanSize).foregroundColor(.orange) }
+                            if #available(macOS 13.3, *) { Text(p.humanSize).monospaced().foregroundStyle(.orange) } else { Text(p.humanSize).foregroundColor(.orange) }
                         }
                     }
-                    .listStyle(.inset)
+                    .listStyle(.plain)
                     .frame(minHeight: 160, maxHeight: 240)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
             }
 
+            // Action bar
             HStack(spacing: 12) {
                 Button { model.check() } label: { Label("Check Now", systemImage: "arrow.clockwise") }
+                    .buttonStyle(.borderedProminent)
                 Button { model.autoClean() } label: { Label("Auto Clean", systemImage: "wand.and.stars") }
+                    .buttonStyle(.bordered)
                 Button { model.interactiveClean() } label: { Label("Interactive", systemImage: "terminal") }
+                    .buttonStyle(.bordered)
                 Spacer()
-                DatePicker("Schedule", selection: $scheduleDate, displayedComponents: [.hourAndMinute])
-                    .labelsHidden()
-                Button { model.scheduleAt(scheduleDate) } label: { Label("Set", systemImage: "calendar.badge.clock") }
-                Button { model.unschedule() } label: { Label("Unschedule", systemImage: "calendar.badge.exclamationmark") }
+                // Schedule summary + popover
+                HStack(spacing: 8) {
+                    let schedText = model.scheduledDate.map { DateFormatter.hm.string(from: $0) } ?? "Not scheduled"
+                    Label("Schedule: \(schedText)", systemImage: "calendar")
+                        .foregroundStyle(.secondary)
+                    Button("Change…") { showSchedulePopover.toggle() }
+                        .buttonStyle(.link)
+                        .popover(isPresented: $showSchedulePopover, arrowEdge: .bottom) {
+                            SchedulePopover(model: model, scheduleDate: $scheduleDate, enableSchedule: $enableSchedule)
+                                .padding()
+                                .frame(width: 380)
+                        }
+                }
             }
         }
         .padding(24)
-        .frame(minWidth: 560, minHeight: 420)
-        .background(.thinMaterial)
+        .frame(minWidth: 640, minHeight: 420)
+        .controlSize(.regular)
         .onAppear {
             scheduleDate = Date(timeIntervalSince1970: model.scheduleTime)
+            enableSchedule = model.scheduledDate != nil
+            model.applyThreshold()
+            model.fetchScheduleStatus()
             model.check()
         }
+        .onChange(of: model.threshold) { _ in model.applyThreshold() }
+        .onChange(of: scheduleDate) { _ in if enableSchedule { model.scheduleAt(scheduleDate) } }
     }
 
     var gradient: LinearGradient { .linearGradient(colors: [.teal, .blue], startPoint: .topLeading, endPoint: .bottomTrailing) }
@@ -191,6 +271,35 @@ if #available(macOS 13.3, *) { Text(p.humanSize).monospaced().foregroundStyle(.o
         if model.usage < 60 { return .green }
         if model.usage < 80 { return .yellow }
         return .red
+    }
+}
+
+// MARK: - Schedule popover
+struct SchedulePopover: View {
+    @ObservedObject var model: DiskModel
+    @Binding var scheduleDate: Date
+    @Binding var enableSchedule: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Toggle("Enable schedule", isOn: $enableSchedule)
+                .onChange(of: enableSchedule) { on in
+                    if on { model.scheduleAt(scheduleDate) } else { model.unschedule() }
+                }
+            HStack {
+                Text("Time")
+                Spacer()
+                DatePicker("Time", selection: $scheduleDate, displayedComponents: [.hourAndMinute])
+                    .labelsHidden()
+                    .frame(width: 140)
+                    .disabled(!enableSchedule)
+            }
+            Toggle("Notifications", isOn: $model.notificationsEnabled)
+            HStack {
+                Spacer()
+                Button("Apply") { model.scheduleAt(scheduleDate) }.disabled(!enableSchedule)
+            }
+        }
     }
 }
 

@@ -12,7 +12,10 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "DiskSpaceSwiftUI",
-            path: "Sources"
+            path: "Sources",
+            swiftSettings: [
+                .unsafeFlags(["-parse-as-library"]) // allow @main App in SPM
+            ]
         )
     ]
 )

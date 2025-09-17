@@ -24,6 +24,10 @@
       "inputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DateFormatter+HM.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/main.swift"
         },
         {
@@ -39,6 +43,7 @@
       "moduleName" : "DiskSpaceSwiftUI",
       "moduleOutputPath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/Modules/DiskSpaceSwiftUI.swiftmodule",
       "objects" : [
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DateFormatter+HM.swift.o",
         "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/main.swift.o"
       ],
       "otherArguments" : [
@@ -59,10 +64,10 @@
         "-entry-point-function-name",
         "-Xfrontend",
         "DiskSpaceSwiftUI_main",
-        "-parse-as-library",
         "-color-diagnostics",
         "-swift-version",
         "5",
+        "-parse-as-library",
         "-plugin-path",
         "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
         "-sdk",
@@ -99,6 +104,10 @@
       "outputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DateFormatter+HM.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/main.swift.o"
         },
         {
@@ -108,6 +117,7 @@
       ],
       "prepareForIndexing" : false,
       "sources" : [
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DateFormatter+HM.swift",
         "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/main.swift"
       ],
       "tempsPath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build",
@@ -125,6 +135,7 @@
       "-package-name",
       "diskspaceswiftui",
       "-c",
+      "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DateFormatter+HM.swift",
       "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/main.swift",
       "-I",
       "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/Modules",
@@ -145,10 +156,10 @@
       "-entry-point-function-name",
       "-Xfrontend",
       "DiskSpaceSwiftUI_main",
-      "-parse-as-library",
       "-color-diagnostics",
       "-swift-version",
       "5",
+      "-parse-as-library",
       "-plugin-path",
       "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
       "-sdk",
@@ -210,6 +221,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DateFormatter+HM.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/main.swift"
         }
       ],
@@ -221,6 +236,10 @@
         {
           "kind" : "virtual",
           "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DateFormatter+HM.swift.o"
         },
         {
           "kind" : "file",
