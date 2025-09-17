@@ -1,0 +1,32 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# macOS
+.DS_Store
+.Trash-*/
+
+# IDE files
+.vscode/
+.idea/
+
+# App bundle
+*.app
+
+# Test results
+TEST_RESULTS.md
+
+# Temporary files
+*.tmp
+*~

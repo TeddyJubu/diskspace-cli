@@ -24,7 +24,23 @@
       "inputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DashboardComponents.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DashboardView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DashboardViewModel.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DateFormatter+HM.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/Scanner.swift"
         },
         {
           "kind" : "file",
@@ -43,12 +59,16 @@
       "moduleName" : "DiskSpaceSwiftUI",
       "moduleOutputPath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/Modules/DiskSpaceSwiftUI.swiftmodule",
       "objects" : [
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardComponents.swift.o",
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardView.swift.o",
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardViewModel.swift.o",
         "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DateFormatter+HM.swift.o",
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/Scanner.swift.o",
         "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/main.swift.o"
       ],
       "otherArguments" : [
         "-target",
-        "arm64-apple-macosx12.0",
+        "arm64-apple-macosx14.0",
         "-whole-module-optimization",
         "-num-threads",
         "8",
@@ -104,7 +124,23 @@
       "outputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardComponents.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardViewModel.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DateFormatter+HM.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/Scanner.swift.o"
         },
         {
           "kind" : "file",
@@ -117,7 +153,11 @@
       ],
       "prepareForIndexing" : false,
       "sources" : [
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DashboardComponents.swift",
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DashboardView.swift",
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DashboardViewModel.swift",
         "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DateFormatter+HM.swift",
+        "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/Scanner.swift",
         "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/main.swift"
       ],
       "tempsPath" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build",
@@ -135,12 +175,16 @@
       "-package-name",
       "diskspaceswiftui",
       "-c",
+      "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DashboardComponents.swift",
+      "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DashboardView.swift",
+      "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DashboardViewModel.swift",
       "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DateFormatter+HM.swift",
+      "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/Scanner.swift",
       "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/main.swift",
       "-I",
       "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/Modules",
       "-target",
-      "arm64-apple-macosx12.0",
+      "arm64-apple-macosx14.0",
       "-whole-module-optimization",
       "-num-threads",
       "8",
@@ -221,7 +265,23 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DashboardComponents.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DashboardView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DashboardViewModel.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DateFormatter+HM.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/Scanner.swift"
         },
         {
           "kind" : "file",
@@ -239,7 +299,23 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardComponents.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardViewModel.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DateFormatter+HM.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/Scanner.swift.o"
         },
         {
           "kind" : "file",

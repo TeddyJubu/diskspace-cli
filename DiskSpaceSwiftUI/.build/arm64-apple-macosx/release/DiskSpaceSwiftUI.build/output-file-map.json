@@ -4,11 +4,35 @@
     "object": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DiskSpaceSwiftUI.o",
     "swift-dependencies": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/master.swiftdeps"
   },
+  "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DashboardComponents.swift": {
+    "object": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardComponents.swift.o",
+    "swiftmodule": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardComponents~partial.swiftmodule",
+    "swift-dependencies": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardComponents.swiftdeps",
+    "diagnostics": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardComponents.dia"
+  },
+  "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DashboardView.swift": {
+    "object": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardView.swift.o",
+    "swiftmodule": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardView~partial.swiftmodule",
+    "swift-dependencies": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardView.swiftdeps",
+    "diagnostics": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardView.dia"
+  },
+  "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DashboardViewModel.swift": {
+    "object": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardViewModel.swift.o",
+    "swiftmodule": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardViewModel~partial.swiftmodule",
+    "swift-dependencies": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardViewModel.swiftdeps",
+    "diagnostics": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DashboardViewModel.dia"
+  },
   "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/DateFormatter+HM.swift": {
     "object": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DateFormatter+HM.swift.o",
     "swiftmodule": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DateFormatter+HM~partial.swiftmodule",
     "swift-dependencies": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DateFormatter+HM.swiftdeps",
     "diagnostics": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/DateFormatter+HM.dia"
+  },
+  "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/Scanner.swift": {
+    "object": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/Scanner.swift.o",
+    "swiftmodule": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/Scanner~partial.swiftmodule",
+    "swift-dependencies": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/Scanner.swiftdeps",
+    "diagnostics": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/Scanner.dia"
   },
   "/Users/teddyburtonburger/DiskSpaceSwiftUI/Sources/main.swift": {
     "object": "/Users/teddyburtonburger/DiskSpaceSwiftUI/.build/arm64-apple-macosx/release/DiskSpaceSwiftUI.build/main.swift.o",
