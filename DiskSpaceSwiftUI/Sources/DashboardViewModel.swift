@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import AppKit
 
 // Utility for human-readable bytes
 extension Int64 {
@@ -49,6 +50,23 @@ final class DashboardViewModel: ObservableObject {
     @Published var cleanupMessage: String = "No significant opportunities found right now."
     @Published var isScanning: Bool = false
 
+    // Settings
+    @AppStorage("ds.includeSystem") var includeSystem: Bool = false
+    @AppStorage("ds.includeExternal") var includeExternal: Bool = false
+    @AppStorage("ds.extraRootsJSON") private var extraRootsJSON: String = "[]" // [String]
+
+    var extraRoots: [URL] {
+        get {
+            (try? JSONDecoder().decode([String].self, from: Data(extraRootsJSON.utf8)))?.map { URL(fileURLWithPath: $0) } ?? []
+        }
+        set {
+            let strings = newValue.map { $0.path }
+            if let data = try? JSONEncoder().encode(strings) {
+                extraRootsJSON = String(data: data, encoding: .utf8) ?? "[]"
+            }
+        }
+    }
+
     // MARK: Lifecycle
     func onAppear() {
         refreshDeviceUsage()
@@ -70,13 +88,18 @@ final class DashboardViewModel: ObservableObject {
         }
     }
 
-    // MARK: Scan entire user home (excluding system dirs) for demo
+    // MARK: Scan based on settings
     func scanFullDisk() {
+        // capture settings on main actor to avoid cross-actor awaits
+        let includeSystem = self.includeSystem
+        let includeExternal = self.includeExternal
+        let extra = self.extraRoots
         isScanning = true
-        Task.detached { [weak self] in
+        Task.detached { [weak self, includeSystem, includeExternal, extra] in
             guard let self else { return }
             let start = Date()
-            let result = Self.scan(paths: Self.defaultScanPaths())
+            let roots = Self.buildScanPaths(includeSystem: includeSystem, includeExternal: includeExternal, extra: extra)
+            let result = Self.scan(paths: roots)
             let duration = Date().timeIntervalSince(start)
             print("Scan finished in \(String(format: "%.1f", duration))s, files: \(result.files.count)")
             await MainActor.run {
@@ -86,6 +109,52 @@ final class DashboardViewModel: ObservableObject {
                 self.isScanning = false
             }
         }
+    }
+
+    // MARK: File actions
+    func reveal(_ item: DSFileItem) {
+        NSWorkspace.shared.activateFileViewerSelecting([item.url])
+    }
+
+    func trash(_ item: DSFileItem) -> Bool {
+        do {
+            var resulting: NSURL?
+            try FileManager.default.trashItem(at: item.url, resultingItemURL: &resulting)
+            // update lists & usage estimate
+            self.topFiles.removeAll { $0.id == item.id }
+            refreshDeviceUsage()
+            return true
+        } catch {
+            print("Trash failed: \(error)")
+            return false
+        }
+    }
+
+    func openFullDiskAccessSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    // Extra roots management
+    func addExtraRootViaPanel() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Choose"
+        if panel.runModal() == .OK, let url = panel.url {
+            var set = Set(extraRoots.map { $0.path })
+            if set.insert(url.path).inserted {
+                var arr = extraRoots
+                arr.append(url)
+                extraRoots = arr
+            }
+        }
+    }
+
+    func removeExtraRoot(_ url: URL) {
+        extraRoots = extraRoots.filter { $0.path != url.path }
     }
 
     // MARK: History
@@ -130,7 +199,7 @@ final class DashboardViewModel: ObservableObject {
         var files: [DSFileItem] = []
     }
 
-    nonisolated private static func defaultScanPaths() -> [URL] {
+    nonisolated private static func defaultUserPaths() -> [URL] {
         let home = FileManager.default.homeDirectoryForCurrentUser
         let subdirs = ["Downloads","Documents","Desktop","Movies","Music","Pictures"]
         var urls = subdirs.map { home.appendingPathComponent($0, isDirectory: true) }
@@ -138,6 +207,40 @@ final class DashboardViewModel: ObservableObject {
         urls.append(home)
         return urls.filter { FileManager.default.fileExists(atPath: $0.path) }
     }
+
+    nonisolated private static func systemPaths() -> [URL] {
+        var roots: [URL] = []
+        let candidates = ["/Applications", "/Library", "/System/Volumes/Data/Applications", "/System/Volumes/Data/Library"]
+        for p in candidates {
+            let u = URL(fileURLWithPath: p, isDirectory: true)
+            if FileManager.default.fileExists(atPath: u.path) { roots.append(u) }
+        }
+        return roots
+    }
+
+    nonisolated private static func externalVolumePaths() -> [URL] {
+        let keys: [URLResourceKey] = [.volumeIsInternalKey, .volumeIsRemovableKey, .volumeIsEjectableKey, .isVolumeKey]
+        let urls = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: keys, options: [.skipHiddenVolumes]) ?? []
+        return urls.filter { url in
+            do {
+                let vals = try url.resourceValues(forKeys: Set(keys))
+                let isInternal = vals.volumeIsInternal ?? false
+                return !isInternal
+            } catch { return false }
+        }
+    }
+
+    nonisolated private static func buildScanPaths(includeSystem: Bool, includeExternal: Bool, extra: [URL]) -> [URL] {
+        var roots = defaultUserPaths()
+        if includeSystem { roots.append(contentsOf: systemPaths()) }
+        if includeExternal { roots.append(contentsOf: externalVolumePaths()) }
+        roots.append(contentsOf: extra)
+        // de-duplicate
+        var seen = Set<String>()
+        return roots.filter { seen.insert($0.path).inserted }
+    }
+
+
 
     nonisolated private static func scan(paths: [URL]) -> (top: [DSFileItem], usage: [DSFileTypeUsage], recommendation: String, files: [DSFileItem]) {
         let keys: [URLResourceKey] = [.isRegularFileKey, .isDirectoryKey, .isPackageKey, .fileAllocatedSizeKey, .totalFileAllocatedSizeKey]
@@ -147,16 +250,18 @@ final class DashboardViewModel: ObservableObject {
         for root in paths {
             if let en = fm.enumerator(at: root, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles, .skipsPackageDescendants]) {
                 for case let url as URL in en {
-                    do {
-                        let values = try url.resourceValues(forKeys: Set(keys))
-                        guard values.isRegularFile == true else { continue }
-                        let size = Int64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
-                        guard size > 0 else { continue }
-                        let item = DSFileItem(url: url, size: size)
-                        acc.files.append(item)
-                        acc.totals[category(for: url), default: 0] += size
-                    } catch {
-                        // skip unreadable
+                    autoreleasepool {
+                        do {
+                            let values = try url.resourceValues(forKeys: Set(keys))
+                            guard values.isRegularFile == true else { return }
+                            let size = Int64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
+                            guard size > 0 else { return }
+                            let item = DSFileItem(url: url, size: size)
+                            acc.files.append(item)
+                            acc.totals[category(for: url), default: 0] += size
+                        } catch {
+                            // skip unreadable
+                        }
                     }
                 }
             }

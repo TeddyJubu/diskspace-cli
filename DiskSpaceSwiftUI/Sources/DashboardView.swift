@@ -84,6 +84,13 @@ struct DashboardView: View {
                                         }
                                         Spacer()
                                         Text(f.sizeText).font(.subheadline.weight(.medium))
+                                        Menu {
+                                            Button("Reveal in Finder") { vm.reveal(f) }
+                                            Button(role: .destructive) { vm.trash(f) } label: { Text("Move to Trash") }
+                                        } label: {
+                                            Image(systemName: "ellipsis.circle").imageScale(.medium)
+                                        }
+                                        .menuStyle(.borderlessButton)
                                     }
                                     .padding(.vertical, 10)
                                     .overlay(alignment: .bottom) {
@@ -170,6 +177,32 @@ struct DashboardView: View {
                             }
                             Text("Current: \(diskModel.scheduledDate.map { DateFormatter.hm.string(from: $0) } ?? "Not scheduled")")
                                 .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    // Scan Settings
+                    WidgetCard("Scan Settings", icon: "gearshape", iconColor: .gray) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Toggle("Include system folders (/Applications, /Library)", isOn: $vm.includeSystem)
+                            Toggle("Include external volumes", isOn: $vm.includeExternal)
+                            Divider()
+                            HStack {
+                                Button { vm.addExtraRootViaPanel() } label: { Label("Add Extra Root…", systemImage: "folder.badge.plus") }
+                                Spacer()
+                                if !vm.extraRoots.isEmpty {
+                                    Menu("Extra Roots") {
+                                        ForEach(vm.extraRoots, id: \.path) { u in
+                                            Button(u.path) { }
+                                            Button(role: .destructive) { vm.removeExtraRoot(u) } label: { Text("Remove \(u.lastPathComponent)") }
+                                        }
+                                    }
+                                }
+                            }
+                            HStack {
+                                Button { vm.openFullDiskAccessSettings() } label: { Label("Open Full Disk Access…", systemImage: "lock.shield") }
+                                Spacer()
+                                Button { vm.scanFullDisk() } label: { Label("Rescan", systemImage: "arrow.clockwise") }
+                            }
                         }
                     }
                 }
