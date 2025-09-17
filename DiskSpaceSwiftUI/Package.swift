@@ -4,10 +4,10 @@ import PackageDescription
 let package = Package(
     name: "DiskSpaceSwiftUI",
     platforms: [
-        .macOS(.v12)
+        .macOS(.v14)
     ],
     products: [
-        .executable(name: "DiskSpaceSwiftUI", targets: ["DiskSpaceSwiftUI"])
+        .executable(name: "DiskSpaceSwiftUI", targets: ["DiskSpaceSwiftUI"]) 
     ],
     targets: [
         .executableTarget(

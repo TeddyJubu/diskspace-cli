@@ -7,7 +7,7 @@ struct DiskSpaceApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            DashboardView()
                 .environmentObject(model)
         }
         .windowStyle(.automatic)
