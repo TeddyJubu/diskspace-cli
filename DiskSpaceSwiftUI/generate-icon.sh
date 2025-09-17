@@ -47,7 +47,15 @@ rm -rf "$ICONSET_DIR"
 # Verify the ICNS file was created
 if [ -f "$ICNS_FILE" ]; then
   SIZE=$(stat -f%z "$ICNS_FILE")
-  echo "✅ Successfully generated AppIcon.icns ($(numfmt --to=iec-i --suffix=B --format="%.1f" $SIZE))"
+  # Format size in human readable format (macOS compatible)
+  if [ $SIZE -gt 1048576 ]; then
+    SIZE_STR="$(echo "scale=1; $SIZE/1048576" | bc)MB"
+  elif [ $SIZE -gt 1024 ]; then
+    SIZE_STR="$(echo "scale=1; $SIZE/1024" | bc)KB"
+  else
+    SIZE_STR="${SIZE}B"
+  fi
+  echo "✅ Successfully generated AppIcon.icns ($SIZE_STR)"
   echo "📁 Location: $ICNS_FILE"
   
   # Touch the ICNS file to update modification time
